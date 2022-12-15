@@ -123,18 +123,15 @@ def do_search() -> str:
     letters = request.form['letters']
     title = 'Here are your results: '
     results = str(search4letters(phrase, letters))
-    timestamp = time.time()
-    log_request(request, results)
-    return render_template('results.html', the_title = title, the_phrase = phrase, the_letters = letters, the_results = results)
-
-def log_request(req: 'flask_request', res:str) -> None:
-    """logger for web operations"""
-
-    #Version 4
     id_user = app.id_user
     with UseDatabase(app.config['dbconfig']) as cursor:
-        _SQL = """insert into log1 (phrase, letters, ip, browser_string, results, id_user) values (%s, %s, %s, %s, %s, %s)"""
-        cursor.execute(_SQL, (req.form['phrase'], req.form['letters'], req.remote_addr, req.user_agent.browser, res, id_user))
+         _SQL = """insert into log6 (phrase, letters, results, id_user) values (%s, %s, %s, %s)"""
+         cursor.execute(_SQL, (request.form['phrase'], request.form['letters'], results, id_user))
+    #log_request(request, results)
+    return render_template('results.html', the_title = title, the_phrase = phrase, the_letters = letters, the_results = results)
+
+
+
 
 @app.route('/viewlog')
 def view_the_log() -> str:
@@ -162,7 +159,7 @@ def getTopUsers():
 
 def getTopWords():
     with UseDatabase(app.config['dbconfig']) as cursor:
-        _SQL = """select phrase from log1"""
+        _SQL = """select phrase from log6"""
         cursor.execute(_SQL)
         phrases = cursor.fetchall()
 
@@ -181,41 +178,41 @@ def getTopWords():
 def view_stats() -> 'html':
     try:
         with UseDatabase(app.config['dbconfig']) as cursor:
-            _SQL = """select count(*) ip from log1"""
+            _SQL = """select count(*) ip from log6"""
             cursor.execute(_SQL)
             n = cursor.fetchall()
 
-            _SQL = """select letters from log1"""
+            _SQL = """select letters from log6"""
             cursor.execute(_SQL)
             l = Counter(cursor.fetchall())
             letters = l.most_common()
 
 
-            _SQL = """select ip from log1"""
+            _SQL = """select ip from log6"""
             cursor.execute(_SQL)
             l = Counter(cursor.fetchall())
             ip = l.most_common()
 
-            _SQL = """select browser_string from log1"""
+            _SQL = """select browser_string from log6"""
             cursor.execute(_SQL)
             l = Counter(cursor.fetchall())
             browser = l.most_common()
 
-            _SQL = """select count(*) ip from log1 where id_user = %s"""
+            _SQL = """select count(*) ip from log6 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             n1 = cursor.fetchall()
 
-            _SQL = """select letters from log1 where id_user = %s"""
+            _SQL = """select letters from log6 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             l = Counter(cursor.fetchall())
             letters1 = l.most_common()
 
-            _SQL = """select ip from log1 where id_user = %s"""
+            _SQL = """select ip from log6 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             l = Counter(cursor.fetchall())
             ip1 = l.most_common()
 
-            _SQL = """select browser_string from log1 where id_user = %s"""
+            _SQL = """select browser_string from log6 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             l = Counter(cursor.fetchall())
             browser1 = l.most_common()
