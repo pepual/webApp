@@ -125,12 +125,10 @@ def do_search() -> str:
     results = str(search4letters(phrase, letters))
     id_user = app.id_user
     with UseDatabase(app.config['dbconfig']) as cursor:
-         _SQL = """insert into log6 (phrase, letters, results, id_user) values (%s, %s, %s, %s)"""
-         cursor.execute(_SQL, (request.form['phrase'], request.form['letters'], results, id_user))
+         _SQL = """insert into log7 (phrase, letters, ip, results, id_user) values (%s, %s, %s, %s, %s)"""
+         cursor.execute(_SQL, (request.form['phrase'], request.form['letters'], request.remote_addr, results, id_user))
     #log_request(request, results)
     return render_template('results.html', the_title = title, the_phrase = phrase, the_letters = letters, the_results = results)
-
-
 
 
 @app.route('/viewlog')
@@ -159,7 +157,7 @@ def getTopUsers():
 
 def getTopWords():
     with UseDatabase(app.config['dbconfig']) as cursor:
-        _SQL = """select phrase from log6"""
+        _SQL = """select phrase from log7"""
         cursor.execute(_SQL)
         phrases = cursor.fetchall()
 
@@ -178,44 +176,35 @@ def getTopWords():
 def view_stats() -> 'html':
     try:
         with UseDatabase(app.config['dbconfig']) as cursor:
-            _SQL = """select count(*) ip from log6"""
+            _SQL = """select count(*) ip from log7"""
             cursor.execute(_SQL)
             n = cursor.fetchall()
 
-            _SQL = """select letters from log6"""
+            _SQL = """select letters from log7"""
             cursor.execute(_SQL)
             l = Counter(cursor.fetchall())
             letters = l.most_common()
 
 
-            _SQL = """select ip from log6"""
+            _SQL = """select ip from log7"""
             cursor.execute(_SQL)
             l = Counter(cursor.fetchall())
             ip = l.most_common()
 
-            _SQL = """select browser_string from log6"""
-            cursor.execute(_SQL)
-            l = Counter(cursor.fetchall())
-            browser = l.most_common()
-
-            _SQL = """select count(*) ip from log6 where id_user = %s"""
+            _SQL = """select count(*) ip from log7 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             n1 = cursor.fetchall()
 
-            _SQL = """select letters from log6 where id_user = %s"""
+            _SQL = """select letters from log7 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             l = Counter(cursor.fetchall())
             letters1 = l.most_common()
 
-            _SQL = """select ip from log6 where id_user = %s"""
+            _SQL = """select ip from log7 where id_user = %s"""
             cursor.execute(_SQL, (app.id_user,))
             l = Counter(cursor.fetchall())
             ip1 = l.most_common()
 
-            _SQL = """select browser_string from log6 where id_user = %s"""
-            cursor.execute(_SQL, (app.id_user,))
-            l = Counter(cursor.fetchall())
-            browser1 = l.most_common()
 
         top5Users = getTopUsers()
         n_anonimo = top5Users[0][1]
@@ -223,16 +212,16 @@ def view_stats() -> 'html':
         top5Users.sort(key = lambda x: x[1], reverse = True)
 
         top5Words = getTopWords()
+        Flask_Logo = os.path.join(app.config['UPLOAD_FOLDER'], 'icon.jpg')
         return render_template('stats.html',
                                 the_title = 'Stats',
                                 n_request = n[0][0],
                                 common_letters = letters[0][0][0],
                                 ip_addr = ip[0][0][0],
-                                browser = browser[0][0][0],
                                 n_request1 = n1[0][0],
                                 common_letters1 = letters1[0][0][0],
                                 ip_addr1 = ip1[0][0][0],
-                                browser1 = browser1[0][0][0],
+                                user_image = Flask_Logo,
                                 n_anonimo = n_anonimo,
                                 rows = top5Users,
                                 words = top5Words
@@ -247,7 +236,7 @@ def view_stats() -> 'html':
     except Exception as err:
         print("Something went wrong: ", str(err))
 
-    return 'Error'
+    return 'No se tienen suficientes estadísticas'
 
 @app.route('/logged')
 def do_login() -> str:
